@@ -1,0 +1,32 @@
+{
+    email {$EMAIL}
+}
+
+{$DOMAIN} {
+    # Reverse proxy to the app container
+    reverse_proxy app:8000
+
+    # Security Headers
+    header {
+        # Enable HSTS
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        # Prevent MIME type sniffing
+        X-Content-Type-Options "nosniff"
+        # Prevent clickjacking
+        X-Frame-Options "DENY"
+        # XSS Protection
+        X-X-Protection "1; mode=block"
+        # Referrer Policy
+        Referrer-Policy "strict-origin-when-cross-origin"
+    }
+
+    # Rate Limiting (using Caddy's internal mechanisms or a plugin if available, 
+    # but for vanilla Caddy we can use the 'request_header' filter or similar logic)
+    # Note: High-level rate limiting usually requires a module, 
+    # but we can simulate basic limits or document the requirement.
+}
+
+# Uptime Kuma Proxy
+status.{$DOMAIN} {
+    reverse_proxy uptime-kuma:3001
+}

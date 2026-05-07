@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install ruff
+
+      - name: Lint with ruff
+        run: ruff check .
+
+      - name: Hadolint Dockerfile
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: Dockerfile
+
+      - name: Start stack
+        run: |
+          cp .env.example .env
+          docker compose up -d
+          # Wait for app to be ready
+          until curl -s http://localhost:8000/health; do
+            echo "Waiting for app..."
+            sleep 5
+          done
+
+      - name: Run Integration Tests
+        run: bash tests/test_integration.sh http://localhost:8000
+
+      - name: Tear down
+        if: always()
+        run: docker compose down -v
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: integration-test-results
+          path: tests/
