@@ -2,9 +2,9 @@
 set -e
 
 # Configuration
-LOG_FILE="/var/log/statuspulse-deploy.log"
+LOG_FILE="./deploy.log"
 APP_NAME="statuspulse-app"
-IMAGE_NAME="ghcr.io/${GITHUB_REPOSITORY:-statuspulse/app}"
+IMAGE_NAME="${IMAGE_NAME:-ghcr.io/tushar-ops23/statuspulse}"
 TAG=${IMAGE_TAG:-"latest"}
 
 log() {
@@ -12,6 +12,10 @@ log() {
 }
 
 log "Starting deployment for tag: $TAG"
+
+# 0. Ensure infra is up
+log "Ensuring database and redis are running..."
+docker compose up -d postgres redis
 
 # 1. Pull latest image
 log "Pulling image $IMAGE_NAME:$TAG..."
