@@ -10,7 +10,7 @@ graph TB
         User[User / Browser]
     end
 
-    subgraph Server["Production Server (EC2)"]
+    subgraph Server["Production Server (EC2: 13.201.102.24)"]
         Caddy[Caddy Reverse Proxy<br/>:80 / :443]
         App[StatusPulse API<br/>FastAPI :8000]
         PG[(PostgreSQL<br/>:5432)]
@@ -71,6 +71,12 @@ statuspulse/
 ├── README.md
 └── SECURITY.md
 ```
+
+## Live Status
+
+- **Status Page**: [https://statuspulse-tushar.duckdns.org/status](https://statuspulse-tushar.duckdns.org/status)
+- **API Health**: [https://statuspulse-tushar.duckdns.org/health](https://statuspulse-tushar.duckdns.org/health)
+- **API Docs**: [https://statuspulse-tushar.duckdns.org/docs](https://statuspulse-tushar.duckdns.org/docs)
 
 ## Prerequisites
 
