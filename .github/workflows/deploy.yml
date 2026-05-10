@@ -53,7 +53,8 @@ jobs:
             if [ ! -d ".git" ]; then
               git clone https://github.com/${{ github.repository }}.git .
             else
-              git pull origin main
+              git fetch origin main
+              git reset --hard origin/main
             fi
             
             export IMAGE_TAG=${{ github.sha }}
