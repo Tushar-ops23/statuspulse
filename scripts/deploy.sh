@@ -2,61 +2,28 @@
 set -e
 
 LOG_FILE="./deploy.log"
-APP_NAME="statuspulse-app"
-IMAGE_NAME="${IMAGE_NAME:-ghcr.io/tushar-ops23/statuspulse}"
-TAG=${IMAGE_TAG:-"latest"}
 
 log() {
     echo "[$(date +'%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
-    }
+}
 
-    log "User: $(whoami), Groups: $(groups)"
-    log "Starting deployment for tag: $TAG"
+log "Starting deployment..."
 
-    log "Ensuring database and redis are running..."
-    sudo docker compose up -d postgres redis
+if [ ! -f .env ]; then
+    log "Creating .env file..."
+    cat <<EOF > .env
+DB_NAME=statuspulse
+DB_USER=postgres
+DB_PASSWORD=postgres
+DB_HOST=postgres
+REDIS_HOST=redis
+EOF
+fi
 
-    log "Pulling image $IMAGE_NAME:$TAG..."
-    sudo docker pull "$IMAGE_NAME:$TAG"
+log "Pulling latest images..."
+sudo docker compose pull
 
-    NEW_CONTAINER="${APP_NAME}_new"
-    log "Starting new container $NEW_CONTAINER..."
-    OLD_CONTAINER_ID=$(sudo docker ps -aqf "name=^${APP_NAME}$")
+log "Starting services..."
+sudo docker compose up -d
 
-    sudo docker run -d \
-        --name "$NEW_CONTAINER" \
-            --network statuspulse-network \
-                --env-file .env \
-                    -e IMAGE_TAG="$TAG" \
-                        "$IMAGE_NAME:$TAG"
-
-                        log "Running health check on new container..."
-                        MAX_RETRIES=10
-                        COUNT=0
-                        HEALTHY=false
-
-                        while [ $COUNT -lt $MAX_RETRIES ]; do
-                            if sudo docker exec "$NEW_CONTAINER" curl -s http://localhost:8000/health | grep -q "healthy"; then
-                                    HEALTHY=true
-                                            break
-                                                fi
-                                                    log "Waiting for container to be healthy... ($((COUNT+1))/$MAX_RETRIES)"
-                                                        sleep 5
-                                                            COUNT=$((COUNT+1))
-                                                            done
-
-                                                            if [ "$HEALTHY" = "true" ]; then
-                                                                log "Container is healthy! Switching..."
-                                                                    if [ ! -z "$OLD_CONTAINER_ID" ]; then
-                                                                            sudo docker stop "$APP_NAME" || true
-                                                                                    sudo docker rm "$APP_NAME" || true
-                                                                                        fi
-                                                                                            sudo docker rename "$NEW_CONTAINER" "$APP_NAME"
-                                                                                                log "Deployment successful!"
-                                                                                                else
-                                                                                                    log "Deployment failed: Health check timed out"
-                                                                                                        sudo docker stop "$NEW_CONTAINER" || true
-                                                                                                            sudo docker rm "$NEW_CONTAINER" || true
-                                                                                                                exit 1
-                                                                                                                fi
-                                                                                                                
+log "Deployment successful!"
